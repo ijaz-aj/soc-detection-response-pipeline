@@ -1,0 +1,24 @@
+# --- Secrets / environment ---
+.env
+*.env
+!.env.example
+
+# --- Python ---
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# --- Local data / container volumes / logs ---
+data/
+*.log
+
+# --- Local LLM models (huge; never commit) ---
+*.gguf
+models/
+
+# --- OS / editor cruft ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
