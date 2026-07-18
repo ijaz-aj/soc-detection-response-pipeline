@@ -1,0 +1,42 @@
+title: Suspicious Mshta or Rundll32 Proxy Execution
+id: 207c8648-4b87-47fe-838a-dd19e7c487d5
+status: experimental
+description: >
+  Detects abuse of the signed Windows binaries mshta.exe and rundll32.exe to proxy execution of
+  malicious code (LOLBins / T1218). Attackers use these trusted binaries to run remote HTA/HTML
+  applications or inline script (vbscript:/javascript:), bypassing application control and blending
+  in with normal activity. Detection targets anomalous arguments (URLs, inline script) rather than
+  the binary itself, since both binaries also run legitimately.
+references:
+  - https://attack.mitre.org/techniques/T1218/005/
+  - https://attack.mitre.org/techniques/T1218/011/
+  - https://lolbas-project.github.io/lolbas/Binaries/Mshta/
+  - https://lolbas-project.github.io/lolbas/Binaries/Rundll32/
+author: ijaz-aj
+date: 2026-07-06
+tags:
+  - attack.defense_evasion
+  - attack.t1218.005
+  - attack.t1218.011
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_mshta:
+    Image|endswith: '\mshta.exe'
+    CommandLine|contains:
+      - 'http://'
+      - 'https://'
+      - 'vbscript'
+      - 'javascript'
+  selection_rundll32:
+    Image|endswith: '\rundll32.exe'
+    CommandLine|contains:
+      - 'javascript:'
+      - 'http://'
+      - 'https://'
+  condition: selection_mshta or selection_rundll32
+falsepositives:
+  - Rare enterprise internal tools that legitimately use HTA applications
+  - Some installers invoke rundll32 with URLs; validate the parent process and full command line
+level: high

@@ -1,0 +1,43 @@
+title: LSASS Memory Access for Credential Dumping
+id: 2ee5716d-37d1-4608-a681-7417bab72ac3
+status: experimental
+description: >
+  Detects a process opening a handle to lsass.exe with access rights commonly used to read process
+  memory for credential theft (e.g. Mimikatz, procdump -ma, comsvcs.dll MiniDump). LSASS caches
+  credentials, NTLM hashes, and Kerberos tickets, making it the primary target for credential access.
+references:
+  - https://attack.mitre.org/techniques/T1003/001/
+  - https://redcanary.com/threat-detection-report/techniques/lsass-memory/
+author: ijaz-aj
+date: 2026-07-06
+tags:
+  - attack.credential_access
+  - attack.t1003.001
+logsource:
+  product: windows
+  category: process_access
+detection:
+  selection:
+    TargetImage|endswith: '\lsass.exe'
+    GrantedAccess:
+      - '0x1010'
+      - '0x1410'
+      - '0x1418'
+      - '0x1438'
+      - '0x143a'
+      - '0x147a'
+      - '0x1fffff'          # ADD: full access (PROCESS_ALL_ACCESS) - recall
+  filter_legit:
+    SourceImage|endswith:
+      - '\wininit.exe'
+      - '\csrss.exe'
+      - '\wmiprvse.exe'
+      - '\MsMpEng.exe'
+  filter_agent:              # ADD: exclude the Elastic Agent's own LSASS reads - precision
+    SourceImage|contains: '\Elastic\Agent\'
+  condition: selection and not 1 of filter_*
+falsepositives:
+  - EDR/antivirus agents (e.g. Defender MsMpEng.exe) legitimately read LSASS memory
+  - Backup, diagnostic, or crash-dump tooling that inspects process memory
+  - Some Windows core processes (wininit.exe, csrss.exe) access LSASS during normal operation
+level: high

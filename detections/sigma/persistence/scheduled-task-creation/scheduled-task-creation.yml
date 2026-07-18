@@ -1,0 +1,43 @@
+title: Suspicious Scheduled Task Creation
+id: 1c0a7962-6231-4ac3-a0ca-6588c8f46702
+status: experimental
+description: >
+  Detects creation of a Windows scheduled task (Security Event ID 4698) whose task definition runs a
+  shell/script interpreter, an encoded command, a payload from a user-writable location, or reaches
+  out to a URL. Scheduled tasks run on triggers and often as SYSTEM, making them a primary technique
+  for persistence and execution (T1053.005). Note: Event 4698 requires "Audit Other Object Access
+  Events" to be enabled (off by default).
+references:
+  - https://attack.mitre.org/techniques/T1053/005/
+author: ijaz-aj
+date: 2026-07-06
+tags:
+  - attack.persistence
+  - attack.execution
+  - attack.t1053.005
+logsource:
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID: 4698
+  suspicious_action:
+    TaskContent|contains:
+      - 'powershell'
+      - ' -enc'
+      - 'cmd.exe'
+      - 'cmd /c'
+      - 'rundll32'
+      - 'mshta'
+      - '\Temp\'
+      - '\AppData\'
+      - '\Users\Public\'
+      - 'http://'
+      - 'https://'
+      - '.bat'
+      - '.vbs'
+  condition: selection and suspicious_action
+falsepositives:
+  - Some legitimate software creates tasks that call powershell/cmd (e.g. updaters) - validate the
+    task name, author, and the full command line
+level: high

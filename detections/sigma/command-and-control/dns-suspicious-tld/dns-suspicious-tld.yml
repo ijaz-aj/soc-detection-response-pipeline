@@ -1,0 +1,46 @@
+title: DNS Query to Suspicious Top-Level Domain
+id: 24096172-7c16-4300-9eb5-cccafd9eceaa
+status: experimental
+description: >
+  Surfaces DNS queries (Sysmon Event ID 22) to top-level domains commonly abused for cheap or
+  free command-and-control infrastructure (.tk, .gq, .ml, .xyz, .top, .click, .zip, .mov, etc.),
+  excluding the major web browsers. This is a hunting/enrichment signal (T1071.004) - legitimate
+  sites use these TLDs too - best paired with domain reputation, newly-seen-domain, or beaconing
+  analysis rather than alerted on alone.
+references:
+  - https://attack.mitre.org/techniques/T1071/004/
+author: ijaz-aj
+date: 2026-07-06
+tags:
+  - attack.command_and_control
+  - attack.t1071.004
+logsource:
+  product: windows
+  category: dns_query
+detection:
+  selection:
+    QueryName|endswith:
+      - '.tk'
+      - '.gq'
+      - '.ml'
+      - '.cf'
+      - '.ga'
+      - '.xyz'
+      - '.top'
+      - '.work'
+      - '.click'
+      - '.rest'
+      - '.zip'
+      - '.mov'
+  filter_browsers:
+    Image|endswith:
+      - '\chrome.exe'
+      - '\msedge.exe'
+      - '\firefox.exe'
+      - '\brave.exe'
+      - '\opera.exe'
+  condition: selection and not filter_browsers
+falsepositives:
+  - Legitimate websites use these TLDs; this is a hunting/enrichment feed, not a standalone alert -
+    pair with threat-intel domain reputation, newly-registered/seen-domain logic, or beaconing analysis
+level: low

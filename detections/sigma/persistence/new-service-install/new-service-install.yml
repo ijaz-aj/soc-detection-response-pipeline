@@ -1,0 +1,43 @@
+title: Suspicious New Service Installation
+id: 257ec690-fc35-4305-964f-20e86295af69
+status: experimental
+description: >
+  Detects installation of a Windows service (Service Control Manager Event ID 7045) whose ImagePath
+  runs a shell/script interpreter, executes from a user-writable location, or matches a known
+  offensive tool (PsExec). Services run at boot and usually as SYSTEM, making them a favourite for
+  persistence and privilege escalation (T1543.003), and for remote execution (PsExec, Cobalt Strike).
+references:
+  - https://attack.mitre.org/techniques/T1543/003/
+  - https://lolbas-project.github.io/lolbas/OtherMSBinaries/
+author: ijaz-aj
+date: 2026-07-06
+tags:
+  - attack.persistence
+  - attack.privilege_escalation
+  - attack.t1543.003
+logsource:
+  product: windows
+  service: system
+detection:
+  selection:
+    Provider_Name: 'Service Control Manager'
+    EventID: 7045
+  suspicious_imagepath:
+    ImagePath|contains:
+      - 'powershell'
+      - 'cmd.exe'
+      - 'cmd /c'
+      - ' -enc'
+      - 'rundll32'
+      - 'mshta'
+      - '\Temp\'
+      - '\AppData\'
+      - '\Users\Public\'
+      - '.bat'
+      - '.vbs'
+      - 'PSEXESVC'
+  condition: selection and suspicious_imagepath
+falsepositives:
+  - Some legitimate software installers briefly register services that call cmd/powershell
+  - Legitimate remote administration with PsExec (validate the source and operator)
+level: high

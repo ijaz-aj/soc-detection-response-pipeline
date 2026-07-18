@@ -1,0 +1,35 @@
+title: Remote Desktop (RDP) Interactive Logon
+id: 0302f3b4-a4a9-41e2-a751-a3353d1d6363
+status: experimental
+description: >
+  Surfaces successful RemoteInteractive (RDP) logons (Security Event 4624, LogonType 10), excluding
+  machine accounts and local logons. RDP is the most common lateral-movement channel once an attacker
+  holds valid credentials (T1021.001). RDP is also normal admin activity, so this is a monitoring /
+  correlation feed: it becomes high-fidelity when paired with context (external source IP, unusual
+  account or destination, or a preceding failed-logon burst).
+references:
+  - https://attack.mitre.org/techniques/T1021/001/
+author: ijaz-aj
+date: 2026-07-06
+tags:
+  - attack.lateral_movement
+  - attack.t1021.001
+logsource:
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID: 4624
+    LogonType: 10
+  filter_machine_account:
+    TargetUserName|endswith: '$'
+  filter_local:
+    IpAddress:
+      - '-'
+      - '127.0.0.1'
+      - '::1'
+  condition: selection and not 1 of filter_*
+falsepositives:
+  - Legitimate administrative RDP sessions (the common case) - pair with source-IP allow-listing,
+    business-hours logic, or correlation with prior failed logons to raise fidelity
+level: medium

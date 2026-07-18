@@ -1,0 +1,55 @@
+# --- Base rule: matches a single Windows failed-logon event -------------------
+title: Windows Failed Logon (Security 4625)
+id: cd05c0a5-9f7c-4673-9a71-79739bdef68c
+name: failed_logon_4625
+status: experimental
+description: >
+  Base rule matching a single Windows failed-logon event (Security Event ID 4625). On its own this
+  is informational; it is consumed by the brute-force correlation below to count failures over time.
+references:
+  - https://attack.mitre.org/techniques/T1110/
+author: ijaz-aj
+date: 2026-07-06
+tags:
+  - attack.credential_access
+  - attack.t1110
+logsource:
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID: 4625
+  condition: selection
+falsepositives:
+  - Users mistyping passwords
+  - Services or scheduled tasks running with stale/expired credentials
+level: informational
+---
+# --- Correlation: many failed logons for one account in a short window ---------
+title: Brute Force - Multiple Failed Logons for a Single Account
+id: 6fc8cf73-9b03-44bb-a659-947b1577cbaa
+status: experimental
+description: >
+  Detects likely password brute forcing: 10 or more failed logons (Security 4625) for the same
+  target account within 5 minutes. A single failed logon is normal; a rapid burst against one
+  account indicates automated password guessing (T1110).
+references:
+  - https://attack.mitre.org/techniques/T1110/
+author: ijaz-aj
+date: 2026-07-06
+tags:
+  - attack.credential_access
+  - attack.t1110
+correlation:
+  type: event_count
+  rules:
+    - failed_logon_4625
+  group-by:
+    - TargetUserName
+  timespan: 5m
+  condition:
+    gte: 10
+falsepositives:
+  - A broken service/scheduled task retrying stale credentials rapidly
+  - A user repeatedly locking their own account after password changes
+level: high

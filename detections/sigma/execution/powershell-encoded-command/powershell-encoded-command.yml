@@ -1,0 +1,47 @@
+title: PowerShell Encoded Command Execution
+id: c5632876-9b84-4c3b-80a3-a18676f4afb2
+status: experimental
+description: >
+  Detects PowerShell launched with an encoded-command argument (-EncodedCommand / -enc / -ec).
+  Attackers Base64-encode PowerShell to hide the real script content from casual inspection and
+  simple logging. This is extremely common in malicious one-liners, macro payloads, and
+  post-exploitation frameworks (Cobalt Strike, Metasploit, Empire).
+references:
+  - https://attack.mitre.org/techniques/T1059/001/
+  - https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_pwsh
+author: ijaz-aj
+date: 2026-07-06
+tags:
+  - attack.execution
+  - attack.t1059.001
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_img:
+    - Image|endswith:
+        - '\powershell.exe'
+        - '\pwsh.exe'
+    - OriginalFileName:
+        - 'PowerShell.EXE'
+        - 'pwsh.dll'
+  # Case/abbreviation variants of -EncodedCommand. Splunk and Sentinel match
+  # case-insensitively, but Elastic Lucene matches the command_line keyword
+  # CASE-SENSITIVELY, so we enumerate the common casings here. The robust
+  # deployment fix on Elastic is a lowercased/case-insensitive command_line field.
+  selection_flag:
+    CommandLine|contains:
+      - ' -e '
+      - ' -E '
+      - ' -ec '
+      - ' -EC '
+      - ' -enc'
+      - ' -Enc'
+      - ' -ENC'
+      - ' -encodedcommand'
+      - ' -EncodedCommand'
+  condition: selection_img and selection_flag
+falsepositives:
+  - Microsoft SCCM / Intune and some software installers run encoded PowerShell
+  - Administrator automation that passes complex arguments via -EncodedCommand
+level: high

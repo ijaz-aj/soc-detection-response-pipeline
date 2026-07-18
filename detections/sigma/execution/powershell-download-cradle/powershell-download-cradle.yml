@@ -1,0 +1,42 @@
+title: PowerShell Download Cradle
+id: 4eef5d84-349c-4014-899e-033f58d369e9
+status: experimental
+description: >
+  Detects PowerShell download cradles - one-liners that fetch and run a next-stage payload, often in
+  memory (fileless). Matches the common download methods (Net.WebClient DownloadString/DownloadFile,
+  Invoke-WebRequest/iwr, Start-BitsTransfer, Invoke-RestMethod). This is the classic stager that
+  bridges initial execution to C2 (T1059.001) and is used by Cobalt Strike, Empire, and most loaders.
+references:
+  - https://attack.mitre.org/techniques/T1059/001/
+author: ijaz-aj
+date: 2026-07-06
+tags:
+  - attack.execution
+  - attack.t1059.001
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_img:
+    - Image|endswith:
+        - '\powershell.exe'
+        - '\pwsh.exe'
+    - OriginalFileName:
+        - 'PowerShell.EXE'
+        - 'pwsh.dll'
+  selection_cradle:
+    CommandLine|contains:
+      - 'DownloadString'
+      - 'DownloadFile'
+      - 'DownloadData'
+      - 'Net.WebClient'
+      - 'Invoke-WebRequest'
+      - 'iwr '
+      - 'Invoke-RestMethod'
+      - 'Start-BitsTransfer'
+  condition: selection_img and selection_cradle
+falsepositives:
+  - Administrators legitimately downloading files with Invoke-WebRequest - the in-memory
+    Net.WebClient.DownloadString + IEX pattern is far more attacker-specific; check whether the
+    result is executed in memory or saved to disk
+level: high

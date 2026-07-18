@@ -1,0 +1,43 @@
+title: Office Application Spawning a Shell or Script Host
+id: 4c4b0c74-de8d-47fc-bf21-01ae00eedf47
+status: experimental
+description: >
+  Detects a Microsoft Office application (Word, Excel, PowerPoint, Outlook, Publisher, Visio)
+  spawning a command interpreter or script host (cmd, powershell, wscript, cscript, mshta, rundll32,
+  regsvr32). Office apps have no legitimate reason to launch these, so the parent-child relationship
+  itself is high-fidelity evidence of malicious macro or exploit execution (T1059), typically the
+  result of phishing (T1566).
+references:
+  - https://attack.mitre.org/techniques/T1059/
+  - https://attack.mitre.org/techniques/T1566/001/
+author: ijaz-aj
+date: 2026-07-06
+tags:
+  - attack.execution
+  - attack.t1059
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection:
+    ParentImage|endswith:
+      - '\winword.exe'
+      - '\excel.exe'
+      - '\powerpnt.exe'
+      - '\outlook.exe'
+      - '\mspub.exe'
+      - '\visio.exe'
+    Image|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\mshta.exe'
+      - '\rundll32.exe'
+      - '\regsvr32.exe'
+  condition: selection
+falsepositives:
+  - Rare enterprise Office add-ins or templates that legitimately shell out - verify the child
+    command line and whether the document came from an external source
+level: high

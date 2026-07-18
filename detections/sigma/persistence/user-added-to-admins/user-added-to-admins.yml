@@ -1,0 +1,31 @@
+title: User Added to Privileged Local Group
+id: 406c5408-2bce-4579-bf2b-2467de12b3aa
+status: experimental
+description: >
+  Detects an account being added to a privileged local group - primarily local Administrators
+  (Security Event 4732). Matched by group SID (S-1-5-32-544) so it is locale-independent. Attackers
+  add accounts to Administrators for durable, privileged persistence (T1098), often right after
+  creating a new account (T1136). Legitimate but rare, so every occurrence warrants review.
+references:
+  - https://attack.mitre.org/techniques/T1098/
+  - https://attack.mitre.org/techniques/T1136/001/
+author: ijaz-aj
+date: 2026-07-06
+tags:
+  - attack.persistence
+  - attack.privilege_escalation
+  - attack.t1098
+logsource:
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID: 4732
+    TargetSid:
+      - 'S-1-5-32-544'   # Administrators
+      - 'S-1-5-32-555'   # Remote Desktop Users
+  condition: selection
+falsepositives:
+  - Legitimate provisioning or IT administration adding a user to Administrators - verify the
+    subject account, the added member, and whether a change ticket exists
+level: high
